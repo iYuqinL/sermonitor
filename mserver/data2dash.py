@@ -91,13 +91,25 @@ def generate_process_table(processes):
     return datatable
 
 
+def sort_addr_by_ip2name(cinfos, ip2name):
+    sorted_addrs = []
+    for addr in ip2name["self_order"]:
+        if addr in cinfos:
+            sorted_addrs.append(addr)
+    for addr in cinfos:
+        if addr not in sorted_addrs:
+            sorted_addrs.append(addr)
+    return sorted_addrs
+
+
 @app.callback(
     Output("graph-div", "children"),
     [Input("update-timer", "n_intervals")])
 def update_all_graph(n_intervals):
     cinfos = data_fetchor.return_cserver_info()
+    sorted_addrs = sort_addr_by_ip2name(cinfos, ip2name)
     all_html_divs = []
-    for server in cinfos:
+    for server in sorted_addrs:
         cinfo = cinfos[server]
         html_divs = []
         server_name = "%s: %s" % (server, ip2name[server]) if server in ip2name else server
