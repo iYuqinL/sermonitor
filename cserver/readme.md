@@ -1,6 +1,6 @@
 # cserver
 
-**Computer Server Monitor on Compute Server Service**
+**Compute Server Monitor on Compute Server Service**
 
 ## install on compute server
 

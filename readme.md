@@ -2,7 +2,9 @@
 
 sers-monitor means Compute Servers Status Monitor.
 
-It is a tool to monitor the compute servers status. The tool consists of two parts: cserver and mserver. "cserver" means compute server, it runs on the compute servers. "mserver" means monitor server, it runs on the monitor server.
+It is a tool to monitor the compute servers status. The tool consists of two parts: cserver and mserver. 
+
+"cserver" means compute server, it runs on the compute servers. "mserver" means monitor server, it runs on the monitor server.
 
 ## Principle of the tool
 
@@ -26,4 +28,5 @@ The compute server monitor tool is quit simple now, especially the web view.
 
 It means: there is still a lot of room for improvement. 
 
-So I need your help. I really appreciate it if you want to improve the tool (web view or status information).
+So I need your help. I will really appreciate it if you want to improve the tool (web view or status information). Here is the [Development details](development.md).
+
