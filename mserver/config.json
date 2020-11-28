@@ -1,0 +1,7 @@
+{
+  "mserver_addr": "192.168.168.245",
+  "mserver_port": 2000,
+  "cserver_port": 2002,
+  "request_interval": 5.0,
+  "dash_interval": 5.0
+}

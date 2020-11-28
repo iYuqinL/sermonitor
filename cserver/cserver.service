@@ -1,0 +1,12 @@
+[Unit]
+Description=computer server monitor
+After=network-online.target
+
+[Service]
+User=text
+ExecStart=/opt/cserver/cserver.sh
+Restart=on-failure
+RestartSec=42s
+
+[Install]
+WantedBy=multi-user.target

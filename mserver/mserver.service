@@ -1,0 +1,12 @@
+[Unit]
+Description=computer server monitor server
+After=network-online.target
+
+[Service]
+User=text
+ExecStart=/home/sermonitor/mserver/mserver.sh
+Restart=on-failure
+RestartSec=42s
+
+[Install]
+WantedBy=multi-user.target
