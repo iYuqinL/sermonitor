@@ -54,14 +54,15 @@ app.layout = html.Div(
     ])
 
 
-def generate_process_table(processes):
+def generate_process_table(processes: list):
     process_keys = ["username", "pid", "command", "gpu_memory_usage", "cpu_memory_usage", "full_command"]
     for process in processes:
         fcmd = ""
         for cmd_phase in process["full_command"]:
             fcmd += cmd_phase + " "
         process["full_command"] = fcmd
-    processes = copy.deepcopy(processes)
+    # processes = copy.deepcopy(processes)
+    processes.sort(key=lambda x: x["gpu_memory_usage"], reverse=True)
     # return html.Dash([
     #     html.Thead(html.Tr([html.Th(key) for key in process_keys])),
     #     html.Tbody([html.Tr([html.Td(processes[i][key]) for key in process_keys])
