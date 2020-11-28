@@ -31,14 +31,12 @@ import plotly.graph_objects as go
 import pandas as pd
 from webview_conf import *
 
-# external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-df = pd.read_csv("data.csv")
+cfg = load_cfg()
+ip2name = load_ip2name()
 
 app = dash.Dash("visg compute servers monitor")
 # app = dash.Dash("compute servers monitor")
-
-cfg = load_cfg()
-ip2name = load_ip2name()
+app.title = "VISG Compute Servers Monitor"
 
 app.layout = html.Div(
     style={'margin': 'auto', 'width': "50%"},
