@@ -39,7 +39,12 @@ app = dash.Dash("visg compute servers monitor")
 app.title = "VISG Compute Servers Monitor"
 
 app.layout = html.Div(
-    style={'margin': 'auto', 'width': "50%"},
+    style={"position": "relative",
+           "width": "100%",
+           "max-width": "960px",
+           "margin": "0 auto",
+           "padding": "0 20px"
+           },
     children=[
         html.Div(id='top-margin', style={"height": 80}),
         html.H1(children="VISG Compute Servers Monitor",
