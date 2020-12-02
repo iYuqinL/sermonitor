@@ -30,3 +30,6 @@ It means: there is still a lot of room for improvement.
 
 So I need your help. I will really appreciate it if you want to improve the tool (web view or status information). Here is the [Development details](development.md).
 
+## Todo List
+- 是否有一个简单干净的页面（表格形式）？显示最主要信息（GPU显存利用率，CPU利用率，CPU内存利用率），每台机器的详细信息以链接形式打开。 （周余）
+
