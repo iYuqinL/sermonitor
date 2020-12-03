@@ -91,7 +91,7 @@ def generate_process_table(processes: list):
                 'backgroundColor': 'rgb(248, 248, 248)'
             }
         ],
-        page_size=3,
+        page_size=2,
     )
     return datatable
 
@@ -129,7 +129,7 @@ def update_all_graph(n_intervals):
             gpu_div.append(
                 html.H5(("%s - %d (%s)" % (gpu_info["name"], gpu_info["index"],
                                            cinfo["gpu"]["query_time"]))))
-            fig = make_subplots(rows=2, cols=1, row_heights=[0.45, 0.45])
+            fig = make_subplots(rows=2, cols=1, row_heights=[0.5, 0.5])
             fig.add_trace(go.Bar(y=["power"], x=[gpu_info["power.draw"]], name="draw",
                                  orientation='h', width=0.6, marker=gpu_power_draw_marker),
                           row=2, col=1)
@@ -146,7 +146,7 @@ def update_all_graph(n_intervals):
                        name="free", orientation='h', width=0.6, marker=gpu_mem_free_marker),
                 row=1, col=1)
             fig.update_layout(**gpu_fig_layout)
-            # fig.update_xaxes(showticklabels=False)
+            fig.update_xaxes(side="top", row=1, col=1)
             # fig.update_yaxes(showticklabels=False)
             gpu_div.append(html.Div(
                 id="%sgpu%ddiv" % (server.replace(".", ""), gpu_info["index"]),
@@ -167,17 +167,18 @@ def update_all_graph(n_intervals):
                        name="free", orientation='h', width=0.8, marker=gpu_mem_free_marker))
             name_len = len(gpu_info["name"])
             link_name = gpu_info["name"] if name_len <= 20 else gpu_info["name"][: 9] + "..." + gpu_info["name"]
-            gpu_contents.append(
-                html.A(
-                    [html.Div(link_name, style={"font-size": "0.8em"}),
-                     dcc.Graph(
-                        id="content%sgpu%d" % (server.replace(".", ""), gpu_info["index"]),
-                        figure=content_fig, config={'displayModeBar': False})],
-                    href="#%sgpu%ddiv" % (server.replace(".", ""), gpu_info["index"])))
+            gpu_contents.append(html.A(
+                [html.Div(link_name, style={"font-size": "0.8em"}),
+                 dcc.Graph(id="content%sgpu%d" % (server.replace(".", ""), gpu_info["index"]),
+                           figure=content_fig, config={'displayModeBar': False})],
+                href="#%sgpu%ddiv" % (server.replace(".", ""), gpu_info["index"])))
         html_divs.append(html.Div(gpus_div, style={"margin-left": 20, }))
         cpu_info = cinfo["cpu"]
         cpu_div = []
-        cpu_div.append(html.H5("CPU: %d logic cores (%s)" % (len(cpu_info["cpu_percents"]), cpu_info["query_time"])))
+        cpu_div.append(html.Div(
+            html.H5("CPU: %d logic cores (%s)" % (
+                len(cpu_info["cpu_percents"]), cpu_info["query_time"])),
+            style={"margin-top": "30px"}))
         fig = make_subplots(rows=1, cols=1)
         fig.add_trace(
             go.Bar(y=["memory"], x=[cpu_info["memory"]["used"]], name="used",
