@@ -39,19 +39,20 @@ app = dash.Dash("visg compute servers monitor")
 app.title = "VISG Compute Servers Monitor"
 
 app.layout = html.Div(
-    style={"position": "relative",
-           "width": "100%",
-           "max-width": "960px",
-           "margin": "0 auto",
-           "padding": "0 20px"
-           },
+    className="container",
     children=[
         html.Div(id='top-margin', style={"height": 80}),
         html.H1(children="VISG Compute Servers Monitor",
                 style={'textAlign': 'center'}
                 ),
         html.Div(id='tile-b-margin', style={"height": 30}),
-        html.Div(id="graph-div", style={}),
+        html.Div(className="row",
+                 children=[
+                     html.Div(id="contentsTab",
+                              className="two columns"),
+                     html.Div(id="serverGraphs",
+                              className="ten columns"),
+                 ], id="columns-row"),
         html.Div(id='bottom-margin', style={"height": 120}),
         dcc.Interval(id="update-timer", interval=cfg["dash_interval"]*1000, n_intervals=0),
     ])
@@ -107,15 +108,18 @@ def sort_addr_by_ip2name(cinfos, ip2name):
 
 
 @app.callback(
-    Output("graph-div", "children"),
+    Output("contentsTab", "children"),
+    Output("serverGraphs", "children"),
     [Input("update-timer", "n_intervals")])
 def update_all_graph(n_intervals):
     cinfos = data_fetchor.return_cserver_info()
     sorted_addrs = sort_addr_by_ip2name(cinfos, ip2name)
     all_html_divs = []
+    all_contents = [html.H5("Severs List")]
     for server in sorted_addrs:
         cinfo = cinfos[server]
         html_divs = []
+        gpu_contents = []
         server_name = "%s: %s" % (server, ip2name[server]) if server in ip2name else server
         html_divs.append(html.H3(server_name))
         gpus_info = cinfo["gpu"]["gpus"]
@@ -123,27 +127,53 @@ def update_all_graph(n_intervals):
         for gpu_info in gpus_info:
             gpu_div = []
             gpu_div.append(
-                html.H5(("%s - %d (%s)" % (gpu_info["name"], gpu_info["index"], cinfo["gpu"]["query_time"]))))
-            fig = make_subplots(rows=2, cols=1, row_heights=[0.5, 0.5])
-            fig.add_trace(
-                go.Bar(y=["mem"], x=[gpu_info["memory.used"]], name="used",
-                       orientation='h', marker=gpu_mem_used_marker), row=1, col=1,)
-            fig.add_trace(
-                go.Bar(y=["mem"], x=[(gpu_info["memory.total"] - gpu_info["memory.used"])],
-                       name="free", orientation='h', marker=gpu_mem_free_marker), row=1, col=1,)
+                html.H5(("%s - %d (%s)" % (gpu_info["name"], gpu_info["index"],
+                                           cinfo["gpu"]["query_time"]))))
+            fig = make_subplots(rows=2, cols=1, row_heights=[0.45, 0.45])
             fig.add_trace(go.Bar(y=["power"], x=[gpu_info["power.draw"]], name="draw",
-                                 orientation='h', marker=gpu_power_draw_marker), row=2, col=1,)
+                                 orientation='h', width=0.6, marker=gpu_power_draw_marker),
+                          row=2, col=1)
             fig.add_trace(
                 go.Bar(y=["power"], x=[gpu_info["enforced.power.limit"] - gpu_info["power.draw"]],
-                       name="lave", orientation='h', marker=gpu_power_lave_marker), row=2, col=1,)
-            fig.update_layout(barmode='stack', height=100, margin={'t': 2, 'b': 1, 'l': 1, 'r': 2})
-            gpu_div.append(dcc.Graph(
-                id="%s-gpu-%d" % (server, gpu_info["index"]), figure=fig,
-                config={'displayModeBar': False}))
+                       name="lave", orientation='h', width=0.6, marker=gpu_power_lave_marker),
+                row=2, col=1,)
+            fig.add_trace(
+                go.Bar(y=["gmem"], x=[gpu_info["memory.used"]], name="used",
+                       orientation='h', width=0.6, marker=gpu_mem_used_marker),
+                row=1, col=1,)
+            fig.add_trace(
+                go.Bar(y=["gmem"], x=[(gpu_info["memory.total"] - gpu_info["memory.used"])],
+                       name="free", orientation='h', width=0.6, marker=gpu_mem_free_marker),
+                row=1, col=1)
+            fig.update_layout(**gpu_fig_layout)
+            # fig.update_xaxes(showticklabels=False)
+            # fig.update_yaxes(showticklabels=False)
+            gpu_div.append(html.Div(
+                id="%sgpu%ddiv" % (server.replace(".", ""), gpu_info["index"]),
+                children=[dcc.Graph(
+                    id="%sgpu%d" % (server.replace(".", ""), gpu_info["index"]), figure=fig,
+                    config={'displayModeBar': False})]))
             gpu_div.append(html.Div(children=[
                 html.H6("Processes on %s - %d" % (gpu_info["name"], gpu_info["index"])),
                 generate_process_table(gpu_info["processes"])], style={"margin-left": 30}))
             gpus_div.append(html.Div(gpu_div))
+            # content_fig = make_subplots(rows=1, cols=1)
+            content_fig = go.Figure(layout=content_fig_layout)
+            content_fig.add_trace(
+                go.Bar(y=["gmem"], x=[gpu_info["memory.used"]], name="used",
+                       orientation='h', width=0.8, marker=gpu_mem_used_marker))
+            content_fig.add_trace(
+                go.Bar(y=["gmem"], x=[(gpu_info["memory.total"] - gpu_info["memory.used"])],
+                       name="free", orientation='h', width=0.8, marker=gpu_mem_free_marker))
+            name_len = len(gpu_info["name"])
+            link_name = gpu_info["name"] if name_len <= 20 else gpu_info["name"][: 9] + "..." + gpu_info["name"]
+            gpu_contents.append(
+                html.A(
+                    [html.Div(link_name, style={"font-size": "0.8em"}),
+                     dcc.Graph(
+                        id="content%sgpu%d" % (server.replace(".", ""), gpu_info["index"]),
+                        figure=content_fig, config={'displayModeBar': False})],
+                    href="#%sgpu%ddiv" % (server.replace(".", ""), gpu_info["index"])))
         html_divs.append(html.Div(gpus_div, style={"margin-left": 20, }))
         cpu_info = cinfo["cpu"]
         cpu_div = []
@@ -151,16 +181,21 @@ def update_all_graph(n_intervals):
         fig = make_subplots(rows=1, cols=1)
         fig.add_trace(
             go.Bar(y=["memory"], x=[cpu_info["memory"]["used"]], name="used",
-                   orientation='h', marker=cpu_mem_used_marker), row=1, col=1)
+                   orientation='h', width=0.6, marker=cpu_mem_used_marker), row=1, col=1)
         fig.add_trace(
             go.Bar(y=["memory"], x=[cpu_info["memory"]["available"]], name="avail",
-                   orientation='h', marker=cpu_mem_free_marker), row=1, col=1)
-        fig.update_layout(barmode='stack', height=50, margin={'t': 2, 'b': 1, 'l': 1, 'r': 2})
+                   orientation='h', width=0.6, marker=cpu_mem_free_marker), row=1, col=1)
+        fig.update_layout(**cpu_mem_fig_layout)
         cpu_div.append(dcc.Graph(
-            id="%s-cpu" % (server), figure=fig, config={'displayModeBar': False}))
+            id="%scpu" % (server.replace(".", "")), figure=fig, config={'displayModeBar': False}))
         html_divs.append(html.Div(cpu_div, style={"margin-left": 30, }))
-        all_html_divs.extend(html_divs)
-    return all_html_divs
+        html_divs.append(html.Div(html.A(html.H6("Bcack to Top"), href="#contentsTab"), style={"margin-left": 20}))
+        all_html_divs.append(html.Div(id="server%s" % server.replace(".", ""), children=html_divs))
+        # server_link_namke = server if
+        all_contents.extend([html.A(html.H6(server, style={"font-size": "1.2em"}),
+                                    href="#server%s" % server.replace(".", "")),
+                             html.Div(gpu_contents, style={"margin-left": 5})])
+    return all_contents, all_html_divs
 
 
 if __name__ == '__main__':

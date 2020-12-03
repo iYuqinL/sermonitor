@@ -17,6 +17,7 @@
 # ----------	---	----------------------------------------------------------
 ###
 import json
+import plotly.graph_objects as go
 
 MiB = 1024*1024
 
@@ -66,3 +67,25 @@ def load_ip2name(file="ip2name.json"):
     with open(file) as f:
         ip2name = json.load(f)
     return ip2name
+
+
+gpu_fig_layout = dict(
+    barmode='stack', height=80,
+    showlegend=False,
+    margin={'t': 2, 'b': 1, 'l': 1, 'r': 2}
+)
+
+cpu_mem_fig_layout = dict(
+    barmode='stack', height=40,
+    showlegend=False,
+    margin={'t': 2, 'b': 1, 'l': 1, 'r': 2}
+)
+
+content_fig_layout = go.Layout(
+    barmode='stack', height=10,
+    margin={'t': 2, 'b': 1, 'l': 1, 'r': 2},
+    xaxis=go.layout.XAxis(
+        showticklabels=False),
+    yaxis=go.layout.YAxis(showticklabels=False),
+    showlegend=False
+)
