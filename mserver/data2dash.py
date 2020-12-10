@@ -190,7 +190,7 @@ def update_all_graph(n_intervals):
         cpu_div.append(dcc.Graph(
             id="%scpu" % (server.replace(".", "")), figure=fig, config={'displayModeBar': False}))
         html_divs.append(html.Div(cpu_div, style={"margin-left": 30, }))
-        html_divs.append(html.Div(html.A(html.H6("Bcack to Top"), href="#contentsTab"), style={"margin-left": 20}))
+        html_divs.append(html.Div(html.A(html.H6("Back to Top"), href="#contentsTab"), style={"margin-left": 20}))
         all_html_divs.append(html.Div(id="server%s" % server.replace(".", ""), children=html_divs))
         # server_link_namke = server if
         all_contents.extend([html.A(html.H6(server, style={"font-size": "1.2em"}),
