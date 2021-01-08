@@ -58,7 +58,8 @@ class DataFetchServer(object):
                 elif response.status_code == 501:
                     print("warning: request_info from differ from mserver address")
                     self.cinfo_lock.acquire()
-                    if time.time() - self.cserver_info_time[cserver_addr] > 5*self.request_interval:
+                    if ((time.time()-self.cserver_info_time[cserver_addr]) > 5*self.request_interval and
+                            cserver_addr in self.cserver_info):
                         self.cserver_info.pop(cserver_addr)
                         self.cserver_info_time.pop(cserver_addr)
                     self.cinfo_lock.release()
@@ -66,12 +67,13 @@ class DataFetchServer(object):
                     print("warning: request_info for addres differ from cserver address")
                     self.caddr_lock.acquire()
                     cserver_addr_time = self.cserver_addrs_time[cserver_addr]
-                    if (time.time() - cserver_addr_time) > 5*self.request_interval:
+                    if ((time.time()-cserver_addr_time) > 5*self.request_interval):
                         self.cserver_addrs.remove(cserver_addr)
                         self.cserver_addrs_time.pop(cserver_addr)
                     self.caddr_lock.release()
                     self.cinfo_lock.acquire()
-                    if time.time() - self.cserver_info_time[cserver_addr] > 5*self.request_interval:
+                    if ((time.time()-self.cserver_info_time[cserver_addr]) > 5*self.request_interval
+                            and cserver_addr in self.cserver_info):
                         self.cserver_info.pop(cserver_addr)
                         self.cserver_info_time.pop(cserver_addr)
                     self.cinfo_lock.release()
@@ -79,16 +81,18 @@ class DataFetchServer(object):
                     print(("erro: in request; the service on cserver port [%d] noly support request_info" %
                            self.cserver_port))
             except Exception as e:
-                self.caddr_lock.acquire()
-                cserver_addr_time = self.cserver_addrs_time[cserver_addr]
-                if (time.time() - cserver_addr_time) > 5*self.request_interval:
-                    self.cserver_addrs.remove(cserver_addr)
-                    self.cserver_addrs_time.pop(cserver_addr)
-                    self.cinfo_lock.acquire()
-                    self.cserver_info.pop(cserver_addr)
-                    self.cserver_info_time.pop(cserver_addr)
-                    self.cinfo_lock.release()
-                self.caddr_lock.release()
+                if cserver_addr in self.cserver_addrs_time:
+                    self.caddr_lock.acquire()
+                    cserver_addr_time = self.cserver_addrs_time[cserver_addr]
+                    if (time.time() - cserver_addr_time) > 5*self.request_interval:
+                        self.cserver_addrs.remove(cserver_addr)
+                        self.cserver_addrs_time.pop(cserver_addr)
+                        if cserver_addr in self.cserver_info:
+                            self.cinfo_lock.acquire()
+                            self.cserver_info.pop(cserver_addr)
+                            self.cserver_info_time.pop(cserver_addr)
+                            self.cinfo_lock.release()
+                    self.caddr_lock.release()
                 print("exception", e)
 
     def request_info_loop(self):
