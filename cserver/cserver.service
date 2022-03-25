@@ -5,7 +5,8 @@ After=network-online.target
 [Service]
 User=text
 ExecStart=/opt/cserver/cserver.sh
-Restart=on-failure
+RuntimeMaxSec=3600s
+Restart=always
 RestartSec=42s
 
 [Install]
