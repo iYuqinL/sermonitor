@@ -58,8 +58,9 @@ class DataFetchServer(object):
                 elif response.status_code == 501:
                     print("warning: request_info from differ from mserver address")
                     self.cinfo_lock.acquire()
-                    if ((time.time()-self.cserver_info_time[cserver_addr]) > 5*self.request_interval and
-                            cserver_addr in self.cserver_info):
+                    if (((time.time()-self.cserver_info_time[cserver_addr]) >
+                         5*self.request_interval) and
+                            (cserver_addr in self.cserver_info)):
                         self.cserver_info.pop(cserver_addr)
                         self.cserver_info_time.pop(cserver_addr)
                     self.cinfo_lock.release()
@@ -72,14 +73,15 @@ class DataFetchServer(object):
                         self.cserver_addrs_time.pop(cserver_addr)
                     self.caddr_lock.release()
                     self.cinfo_lock.acquire()
-                    if ((time.time()-self.cserver_info_time[cserver_addr]) > 5*self.request_interval
-                            and cserver_addr in self.cserver_info):
+                    if (((time.time()-self.cserver_info_time[cserver_addr]) >
+                         5*self.request_interval)
+                            and (cserver_addr in self.cserver_info)):
                         self.cserver_info.pop(cserver_addr)
                         self.cserver_info_time.pop(cserver_addr)
                     self.cinfo_lock.release()
                 else:
-                    print(("erro: in request; the service on cserver port [%d] noly support request_info" %
-                           self.cserver_port))
+                    print(("erro: in request; the service on cserver port"
+                           " [%d] noly support request_info" % self.cserver_port))
             except Exception as e:
                 if cserver_addr in self.cserver_addrs_time:
                     self.caddr_lock.acquire()
@@ -142,12 +144,15 @@ class DataFetchHandler(BaseHTTPRequestHandler):
                     print("register [%s] succesfully" % slaver_addr)
                     self.send_response(200, "regitster %s successfully" % slaver_addr)
                 else:
-                    self.send_response(200, "address %s haved already registered" % slaver_addr)
+                    self.send_response(
+                        200, "address %s haved already registered" % slaver_addr)
                 data_fetchor.caddr_lock.release()
             else:
-                print("warning: sending address [%s] differ from slaver address [%s]" % (read_addr, slaver_addr))
-                self.send_response(
-                    201, "warning: sending address [%s] differ from slaver address [%s]" % (read_addr, slaver_addr))
+                print(
+                    "warning: sending address [%s] differ from slaver address [%s]" %
+                    (read_addr, slaver_addr))
+                self.send_response(201, "warning: sending address [%s] " % read_addr +
+                                   "differ from slaver address [%s]" % slaver_addr)
         elif "cserver_info" in info:
             cserver_info = info["cserver_info"]
             slaver_addr, _ = self.client_address
@@ -156,16 +161,21 @@ class DataFetchHandler(BaseHTTPRequestHandler):
             data_fetchor.caddr_lock.release()
             if slaver_addr not in cserver_addrs:
                 print("warning: the slaver address is not in cserver_addrs")
-                self.send_response(301, "warning: the slaver address is not in cserver_addrs")
+                self.send_response(
+                    301, "warning: the slaver address is not in cserver_addrs")
             else:
                 data_fetchor.cinfo_lock.acquire()
                 data_fetchor.cserver_info[slaver_addr] = cserver_info
                 data_fetchor.cserver_info_time[slaver_addr] = time.time()
                 data_fetchor.cinfo_lock.release()
-                self.send_response(200, "fetch info from [%s] successfully" % slaver_addr)
+                self.send_response(
+                    200, "fetch info from [%s] successfully" % slaver_addr)
         else:
-            print("erro: in GET; the service on this port only support check_regi and cserver_info")
-            self.send_response(202, "erro: the service on this port only support check_regi and cserver_info")
+            print("erro: in GET; the service on this port only support"
+                  " check_regi and cserver_info")
+            self.send_response(202,
+                               "erro: the service on this port only support"
+                               " check_regi and cserver_info")
         self.end_headers()
 
     def log_message(self, format: str, *args) -> None:
@@ -174,7 +184,9 @@ class DataFetchHandler(BaseHTTPRequestHandler):
 
 def mservice(data_fecchor):
     print(data_fecchor.mserver_addr, data_fecchor.mserver_port)
-    server = HTTPServer((data_fecchor.mserver_addr, data_fecchor.mserver_port), DataFetchHandler)
+    server = HTTPServer(
+        (data_fecchor.mserver_addr, data_fecchor.mserver_port),
+        DataFetchHandler)
     print("监听服务开启，按<Ctrl-C>退出")
     server.serve_forever()
 
