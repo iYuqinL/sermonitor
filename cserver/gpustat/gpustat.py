@@ -486,13 +486,31 @@ class GPUStatCollection(object):
                         # TODO: add some reminder for NVML broken context
                         # e.g. nvidia-smi reset  or  reboot the system
                         pass
+                    except FileNotFoundError:
+                        # Ignore the exception which probably has occured
+                        # from psutil, due to a non-existent PID (see #95).
+                        # The exception should have been translated, but
+                        # there appears to be a bug of psutil. It is unlikely
+                        # FileNotFoundError is thrown in different situations.
+                        pass
 
                 # TODO: Do not block if full process info is not requested
                 time.sleep(0.1)
                 for process in processes:
                     pid = process['pid']
                     cache_process = GPUStatCollection.global_processes[pid]
-                    process['cpu_percent'] = cache_process.cpu_percent()
+                    try:
+                        process['cpu_percent'] = cache_process.cpu_percent()
+                    except psutil.NoSuchProcess:
+                        process['cpu_percent'] = 0.0
+                    except FileNotFoundError:
+                        # Ignore the exception which probably has occured
+                        # from psutil, due to a non-existent PID (see #95).
+                        # The exception should have been translated, but
+                        # there appears to be a bug of psutil. It is unlikely
+                        # FileNotFoundError is thrown in different situations.
+                        process['cpu_percent'] = 0.0
+                        pass
 
             index = N.nvmlDeviceGetIndex(handle)
             gpu_info = {
@@ -501,17 +519,17 @@ class GPUStatCollection(object):
                 'name': name,
                 'temperature.gpu': temperature,
                 'fan.speed': fan_speed,
-                'utilization.gpu': utilization.gpu if utilization else None,
+                'utilization.gpu': utilization.gpu if utilization else 0,
                 'utilization.enc':
                     utilization_enc[0] if utilization_enc else None,
                 'utilization.dec':
                     utilization_dec[0] if utilization_dec else None,
-                'power.draw': power // 1000 if power is not None else None,
+                'power.draw': power // 1000 if power is not None else 0,
                 'enforced.power.limit': power_limit // 1000
-                if power_limit is not None else None,
+                if power_limit is not None else 0,
                 # Convert bytes into MBytes
-                'memory.used': memory.used // MB if memory else None,
-                'memory.total': memory.total // MB if memory else None,
+                'memory.used': memory.used // MB if memory else 0,
+                'memory.total': memory.total // MB if memory else 0,
                 'processes': processes,
             }
             GPUStatCollection.clean_processes()
@@ -550,75 +568,6 @@ class GPUStatCollection(object):
         s += '\n'.join('  ' + str(g) for g in self.gpus)
         s += '\n])'
         return s
-
-    # --- Printing Functions ---
-
-    def print_formatted(self, fp=sys.stdout, force_color=False, no_color=False,
-                        show_cmd=False, show_full_cmd=False, show_user=False,
-                        show_pid=False, show_fan_speed=None,
-                        show_codec="", show_power=None,
-                        gpuname_width=16, show_header=True,
-                        eol_char=os.linesep,
-                        ):
-        # ANSI color configuration
-        if force_color and no_color:
-            raise ValueError("--color and --no_color can't"
-                             " be used at the same time")
-
-        if force_color:
-            TERM = os.getenv('TERM') or 'xterm-256color'
-            t_color = Terminal(kind=TERM, force_styling=True)
-
-            # workaround of issue #32 (watch doesn't recognize sgr0 characters)
-            t_color._normal = u'\x1b[0;10m'
-        elif no_color:
-            t_color = Terminal(force_styling=None)
-        else:
-            t_color = Terminal()   # auto, depending on isatty
-
-        # appearance settings
-        entry_name_width = [len(g.entry['name']) for g in self]
-        gpuname_width = max([gpuname_width or 0] + entry_name_width)
-
-        # header
-        if show_header:
-            if IS_WINDOWS:
-                # no localization is available; just use a reasonable default
-                # same as str(timestr) but without ms
-                timestr = self.query_time.strftime('%Y-%m-%d %H:%M:%S')
-            else:
-                time_format = locale.nl_langinfo(locale.D_T_FMT)
-                timestr = self.query_time.strftime(time_format)
-            header_template = '{t.bold_white}{hostname:{width}}{t.normal}  '
-            header_template += '{timestr}  '
-            header_template += '{t.bold_black}{driver_version}{t.normal}'
-
-            header_msg = header_template.format(
-                hostname=self.hostname,
-                width=gpuname_width + 3,  # len("[?]")
-                timestr=timestr,
-                driver_version=self.driver_version,
-                t=t_color,
-            )
-
-            fp.write(header_msg.strip())
-            fp.write(eol_char)
-
-        # body
-        for g in self:
-            g.print_to(fp,
-                       show_cmd=show_cmd,
-                       show_full_cmd=show_full_cmd,
-                       show_user=show_user,
-                       show_pid=show_pid,
-                       show_fan_speed=show_fan_speed,
-                       show_codec=show_codec,
-                       show_power=show_power,
-                       gpuname_width=gpuname_width,
-                       term=t_color)
-            fp.write(eol_char)
-
-        fp.flush()
 
     def jsonify(self):
         return {
